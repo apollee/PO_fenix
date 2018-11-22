@@ -29,10 +29,10 @@ public class DoSave extends Command<SchoolManager> {
   /** @see pt.tecnico.po.ui.Command#execute() */
   @Override
   public final void execute() {
+	_form.parse();
     try{
       _receiver.save(null);
     }catch(ImportFileException e){
-	_form.parse();
 	
 	try{
 	  _receiver.save(_filename.value());
