@@ -4,7 +4,7 @@ import java.util.TreeMap;
 import java.io.Serializable;
 import sth.Serial;
 public class Student extends Person implements Serializable{
-
+    int max_disciplines = 6;
     private TreeMap<String,Discipline> _disciplines;
     private Course _course; 
    

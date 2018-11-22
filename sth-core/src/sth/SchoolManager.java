@@ -17,10 +17,10 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import sth.exceptions.BadEntryException;
 import sth.exceptions.ImportFileException;
+import sth.exceptions.InvalidDisciplineException;
 import sth.exceptions.NoSuchPersonIdException;
 
 //FIXME import other classes if needed
-
 
 /**
  * The façade class.
@@ -28,12 +28,7 @@ import sth.exceptions.NoSuchPersonIdException;
 public class SchoolManager {
 
   private School _school = new School();
-  /*private TreeMap<Integer, Person> _persons = _school.getPersons();
-  private HashMap<Integer, Student> _students = _school.getStudents();
-  private HashMap<Integer, Professor> _professors = _school.getProfessors();
-  private HashMap<Integer, Administrative> _administratives = _school.getAdministratives();
-  */
-  private String _filename = "";
+    private String _filename = "";
   private boolean _filechanged = true;
   private Person _person;
 
@@ -62,10 +57,6 @@ public class SchoolManager {
     ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(_filename)));
     School school2 = (School) ois.readObject();
     ois.close();   
-    /*_persons = _school2.getPersons();
-    _students = _school2.getStudents();
-    _professors = _school2.getProfessors();
-    _administratives = _school.getAdministratives(); */
     if(school2.getPersons().get(_person.getId()) != null){
         _school = school2;
     }else{
@@ -87,17 +78,14 @@ public class SchoolManager {
     }
   }
 
-  /**
+   /**
    * @param id
    * @throws NoSuchPersonIdException
    */
-  public void login(int id) throws NoSuchPersonIdException {
-    //FIXME implement method
-    _person = _school.getPersons().get(id);
-    if (_person == null){
-        throw new NoSuchPersonIdException(id);
+ public void login(int id) throws NoSuchPersonIdException {
+       _person = _school.getPersons().get(id);
+       _school.login(id);
     }
-  }
 
   /**
    * @return true when the currently logged in person is an administrative
@@ -152,28 +140,13 @@ public class SchoolManager {
 
   //FIXME implement other methods (in general, one for each command in sth-app)
 
+    public String showPerson(){
+        return _school.showPerson();
+    }
 
- /* public String showPerson(){
-    if(hasProfessor()){
-        return toStringProfessor();
-    }else if(hasRepresentative()){
-        return toStringRepresentative();
-    }else if(hasStudent()){
-        return toStringStudent();
-    }else{
-        return toStringAdministrative();
-    }   
-  }*/
-
-   public String showPerson(){
-    return _person.toString(); 
-   }
-
-   public String studentsDiscipline(String discipline) throws BadEntryException{
-    int id = _person.getId();
-    Professor _professor = _school.getProfessors().get(id);
-    return _professor.studentsDiscipline(discipline);
-   }
+    public String studentsDiscipline(String discipline) throws BadEntryException{
+        return _school.studentsDiscipline(discipline);
+    }
 
   public void changePhoneNumber(String newPhoneNumber){ 
      _filechanged = true;
@@ -181,38 +154,22 @@ public class SchoolManager {
   }
 
   public String showAllPersons() {
-    String text = "";   
-
-    for(Person person: _school.getPersons().values()){
-         text += person.toString();
-    }
-  return text;
-  }
-
+    return _school.showAllPersons();
+  } 
+ 
   public String searchPerson(String name) {
-  /*como encontrar as pessoas sendo que o TreeMap guarda pelo id??*/
-    String string= "";
-    for(Person person: _school.getPersons().values()){
-        String _name = person.getName();
-        if(_name.contains(name)){
-            string += person.toString();
-        }
-    } 
-    return string;  
+    return _school.searchPerson(name);
   }
 
-  public void createProject(String nameProject, String nameDiscipline) throws BadEntryException, ImportFileException{
-    int id = _person.getId();
-    Professor _professor = _school.getProfessors().get(id);
-    _professor.createProject(nameProject, nameDiscipline);
+
+  public void createProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
+    _school.createProject(nameProject, nameDiscipline);
   }
 
-  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, ImportFileException{
-    int id = _person.getId();
-    Professor _professor = _school.getProfessors().get(id);
-    _professor.closeProject(nameProject, nameDiscipline);
-  }      
-  
 
+  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
+    _school.closeProject(nameProject, nameDiscipline);
+  }
+ 
 } 
  

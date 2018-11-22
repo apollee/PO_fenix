@@ -12,6 +12,11 @@ public class Project implements Serializable{
         _name = name;
     }
 
+    public Project(String name, String description){
+        _name = name;
+        _description = description;
+    }
+
     public void setOpen(boolean open){
         _open = open;
     }

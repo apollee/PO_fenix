@@ -6,6 +6,7 @@ import java.util.TreeMap;
 
 public class Discipline implements Serializable{ 
 
+    private int max_students = 20;
     private TreeMap<Integer,Student> _students;
     private TreeMap<Integer,Professor> _professors;
     private TreeMap<String,Project> _projects;

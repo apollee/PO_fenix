@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 public class Course implements Serializable{
 
+    int max_representatives = 7;
     private String _name;
     private HashMap<Integer,Student> _representatives;
 
