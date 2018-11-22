@@ -1,6 +1,6 @@
 package sth.app.teaching;
 
-import sth.exceptions.ImportFileException;
+import sth.exceptions.InvalidDisciplineException;
 import sth.app.exceptions.NoSuchDisciplineException;
 import sth.app.exceptions.DuplicateProjectException;
 import sth.exceptions.BadEntryException;
@@ -39,7 +39,7 @@ public class DoCreateProject extends Command<SchoolManager> {
     //FIXME implement command
     } catch(BadEntryException e){
         throw new DuplicateProjectException(_nameDiscipline.value(), _nameProject.value());
-    } catch(ImportFileException e){
+    } catch(InvalidDisciplineException e){
         throw new NoSuchDisciplineException(_nameDiscipline.value());
     }
   }

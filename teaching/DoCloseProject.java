@@ -3,7 +3,7 @@ package sth.app.teaching;
 import sth.app.exceptions.NoSuchDisciplineException;
 import sth.app.exceptions.NoSuchProjectException;
 import sth.exceptions.BadEntryException;
-import sth.exceptions.ImportFileException;
+import sth.exceptions.InvalidDisciplineException;
 import pt.tecnico.po.ui.Command;
 import pt.tecnico.po.ui.DialogException;
 import pt.tecnico.po.ui.Input;
@@ -38,7 +38,7 @@ public class DoCloseProject extends Command<SchoolManager> {
     //FIXME implement command
     } catch(BadEntryException e){
         throw new NoSuchProjectException(_nameDiscipline.value(), _nameProject.value());
-    } catch(ImportFileException p){
+    } catch(InvalidDisciplineException p){
         throw new NoSuchDisciplineException(_nameDiscipline.value());
     }
   } 
