@@ -9,23 +9,24 @@ public class Course implements Serializable{
     int max_representatives = 7;
     private String _name;
     private HashMap<Integer,Student> _representatives;
+    private HashMap<String, Discipline> _disciplines;
 
-    
     public Course(String name){
         _name = name;
         _representatives =  new HashMap<Integer, Student>();
+        _disciplines = new HashMap<String, Discipline>();
     }
 
     public HashMap<Integer,Student> getRepresentatives(){
         return _representatives;
     }
 
+    public HashMap<String, Discipline> getDisciplines(){
+        return _disciplines;
+    }
+
     public String getName(){
         return _name;
     }   
-    
-    /*public int compareTo(Course course){
-        return _name.compareTo(course.getName());
-    }*/
 }
         

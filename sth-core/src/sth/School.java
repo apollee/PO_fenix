@@ -3,7 +3,11 @@ package sth;
 //FIXME import other classes if needed
 
 import sth.Serial;
+import java.text.Collator;
+import java.util.Locale;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
@@ -12,9 +16,16 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import sth.exceptions.BadEntryException;
+import sth.exceptions.CloseSurveyException;
 import sth.exceptions.InvalidDisciplineException;
+import sth.exceptions.InvalidProjectException;
 import sth.exceptions.NoSuchPersonIdException;
 import sth.exceptions.ImportFileException;
+import sth.exceptions.OpenSurveyException;
+import sth.exceptions.CloseSurveyException;
+import sth.exceptions.FinishSurveyException;
+import sth.exceptions.SurveyFinishException;
+
 
 /**
  * School implementation.
@@ -32,6 +43,7 @@ public class School implements Serializable {
   private HashMap<Integer,Administrative> _administratives;
   private HashMap<String,Course> _courses;
   private HashMap<String,Discipline> _disciplines;
+  private TreeMap<String, HashMap<String, Discipline>> _disciplineCourse;
   private Person _person;
 
 
@@ -44,6 +56,7 @@ public class School implements Serializable {
     _administratives = new HashMap<Integer, Administrative>();
     _courses = new HashMap<String,Course>();
     _disciplines = new HashMap<String,Discipline>();
+    _disciplineCourse = new TreeMap<String, HashMap<String, Discipline>>();
   }
 
   /**
@@ -62,20 +75,15 @@ public class School implements Serializable {
 
         while(line != null){
             String[] fields = line.split("\\|");
+            int id = Integer.parseInt(fields[1]);
+            if(_persons.get(id) != null){
+                throw new BadEntryException(fields[0]);
+            }
+
             if(fields[0].equals("FUNCIONÁRIO")){
-                int id = Integer.parseInt(fields[1]);
-                if(_persons.get(id) != null){
-                    throw new BadEntryException(fields[0]);
-                }
-                Administrative _administrative = new Administrative(id, fields[2], fields[3]);
-                _administratives.put(id, _administrative);
-                _persons.put(id, (Person) _administrative);
+                registerAdministrative(fields);
                 line = reader.readLine();
             }else if(fields[0].equals("DOCENTE")){
-                int id = Integer.parseInt(fields[1]);
-                if(_persons.get(id) != null){
-                    throw new BadEntryException(fields[0]);
-                }
                 Professor _professor = new Professor(id, fields[2], fields[3]);
                 _professors.put(id, _professor);
                 _persons.put(id, (Person) _professor);
@@ -87,17 +95,28 @@ public class School implements Serializable {
                         String course  = fields[0].substring(2);
                         String discipline = fields[1];
                         Course _course = _courses.get(course);
+                        
                         if(_course == null){
                             _course = new Course(course);
+                            _disciplineCourse.put(course, new HashMap<String, Discipline>());
                             _courses.put(course, _course);
                         }
+
+                        if(_professor.getDisciplineCourses().get(course) == null){
+                            _professor.getDisciplineCourses().put(course, new HashMap<String, Discipline>());
+                        }
+
                         Discipline _discipline = _disciplines.get(discipline);
                         if(_discipline == null){
                             _discipline = new Discipline(discipline,_course);
                             _disciplines.put(discipline, _discipline);
+                            _course.getDisciplines().put(discipline, _discipline);
                         }
+                        _disciplineCourse.get(course).put(discipline, _discipline);
+
                         if(_professor.getDisciplines() != null){
                             _professor.getDisciplines().put(discipline, _discipline);
+                            _professor.getDisciplineCourses().get(course).put(discipline, _discipline); 
                         }
                         line = reader.readLine();
                         if(line != null){
@@ -107,14 +126,9 @@ public class School implements Serializable {
                     }
                 }
             }else if(fields[0].equals("DELEGADO")){
-                int id = Integer.parseInt(fields[1]);
-                if(_persons.get(id) != null){
-                    throw new BadEntryException(fields[0]);
-                }
                 Student _student = new Student(id, fields[2], fields[3]);
                 _students.put(id, _student);
                 _persons.put(id, (Person) _student);
-
 
                 line = reader.readLine();
                 fields = line.split("\\|");
@@ -124,49 +138,41 @@ public class School implements Serializable {
                     Course _course = _courses.get(course);
                     if(_course == null){
                         _course = new Course(course);
+                        _disciplineCourse.put(course, new HashMap<String, Discipline>());
                         _courses.put(course,_course);
                     }
-                    if(_course.getRepresentatives().size() == 7){
+                    if(_course.getRepresentatives().size() == 8){
+                        System.out.println(id);
                         throw new BadEntryException(course);
                     }else{
                         _course.getRepresentatives().put(id,_student);
                     }
-                    /*_course.getRepresentatives().put(id,_student);*/
                     _student.setCourse(_course);
                     Discipline _discipline = _disciplines.get(discipline);
                     if(_discipline == null){
                         _discipline = new Discipline(discipline, _course);
                         _disciplines.put(discipline,_discipline);
+                        _course.getDisciplines().put(discipline, _discipline);
                     }
                     if(_student.getDisciplines().size() == 6){
                         throw new BadEntryException(discipline);
                     }else{
-                        _student.getDisciplines().put(discipline,_discipline);
                         if(_discipline.getStudents().size() == 100){
                             throw new BadEntryException(discipline);
                         }else{
+                            _student.getDisciplines().put(discipline,_discipline);
                             _discipline.getStudents().put(id,_student);
                         }
                     }
-                    /*
-                    if(_student.getDisciplines() != null){
-                        _student.getDisciplines().put(discipline,_discipline);
-                        _discipline.getStudents().put(id, _student);
-                    }*/
                     line = reader.readLine();
                     if(line != null){
                       fields = line.split("\\|");
                     }
                 }
             }else if(fields[0].equals("ALUNO")){
-                int id = Integer.parseInt(fields[1]);
-                if(_persons.get(id) != null){
-                    throw new BadEntryException(fields[0]);
-                }
                 Student _student = new Student(id, fields[2], fields[3]);
                 _students.put(id, _student);
                 _persons.put(id, (Person) _student);
-
 
                 line = reader.readLine();
                 fields = line.split("\\|");
@@ -176,6 +182,7 @@ public class School implements Serializable {
                     Course _course = _courses.get(course);
                     if(_course == null){
                         _course = new Course(course);
+                        _disciplineCourse.put(course, new HashMap<String, Discipline>());
                         _courses.put(course, _course);
                     }
                     _student.setCourse(_course);
@@ -183,6 +190,7 @@ public class School implements Serializable {
                     if(_discipline == null){
                         _discipline = new Discipline(discipline, _course);
                         _disciplines.put(discipline, _discipline);
+                        _course.getDisciplines().put(discipline, _discipline);
                     }
                     if(_student.getDisciplines().size() == 6){
                         throw new BadEntryException(discipline);
@@ -194,8 +202,6 @@ public class School implements Serializable {
                             _discipline.getStudents().put(id,_student);
                         }
                     }
-                    /*_student.getDisciplines().put(discipline,_discipline);
-                    _discipline.getStudents().put(id,_student);*/
                     line = reader.readLine();
                     if(line != null){
                         fields = line.split("\\|");
@@ -212,7 +218,6 @@ public class School implements Serializable {
     }catch(IOException e){
         throw new ImportFileException(e);
     }
-
   }
 
 
@@ -221,15 +226,17 @@ public class School implements Serializable {
   * @param fields  information about the administrative
   */
 
-  public void registerAdministrative(String[] fields) {
+  public void registerAdministrative(String[] fields) throws BadEntryException{
     int id = Integer.parseInt(fields[1]);
+    if(_persons.get(id) != null){
+        throw new BadEntryException(fields[0]);
+    }
     Administrative _administrative = new Administrative(id, fields[2], fields[3]);
     _administratives.put(id, _administrative);
     _persons.put(id, (Person) _administrative);
   }
 
   //FIXME implement other methods
-
 
   /**
   * Returns the persons in the school database
@@ -275,6 +282,8 @@ public class School implements Serializable {
     }
   }
 
+  /*===================================================PORTAL DA PESSOA===============================*/
+
   /**
   * Prints the information of the person who logged in
   * @return String
@@ -315,14 +324,24 @@ public class School implements Serializable {
   */
   public String searchPerson(String name){
     String string = "";
+    ArrayList<Person> list = new ArrayList<Person>();
+    
     for(Person person: getPersons().values()){
         String _name = person.getName();
         if(_name.contains(name)){
-            string += person.toString();
+            /*string += person.toString();*/
+            list.add(person);
         }
     }
+    list.sort(Comparator.comparing(Person::getName));
+    for (int i = 0; i < list.size(); i++){
+        string += list.get(i).toString();
+    }
+
     return string;
   }
+
+  /*===================================================PORTAL DO DOCENTE===============================*/
 
   /**
   * Creates a project of the discipline with the name that was given by the professor
@@ -345,9 +364,90 @@ public class School implements Serializable {
   * @throws InvalidDisciplineException
   */
 
-  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
+  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException, OpenSurveyException{
     int id = _person.getId();
     Professor _professor = getProfessors().get(id);
     _professor.closeProject(nameProject, nameDiscipline);
+  }
+
+  public String surveyResults(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
+    int id = _person.getId();
+    Professor _professor = getProfessors().get(id);
+    return _professor.surveyResults(disciplineName, projectName);
+  }
+
+  public String projectSubmissions(String disciplineName, String nameProject) throws BadEntryException, InvalidDisciplineException{
+    int id = _person.getId();
+    Professor _professor = getProfessors().get(id);
+    return _professor.projectSubmissions(disciplineName, nameProject);
+  }
+  
+
+  /*===================================================PORTAL DO ESTUDANTE===============================*/
+
+  /**
+  * Delivers a project(with the name that was given) of the discipline(with the name that was given).
+    The delivery includes the given delivery message
+  * @param nameProject name of the project
+  * @param nameDiscipline name of the discipline
+  * @param deliveryMessage delivery message of the submission
+  * @throws BadEntryException
+  * @throws InvalidDisciplineException
+  */
+  public void deliverProject(String disciplineName, String nameProject, String deliveryMessage)
+  throws BadEntryException, InvalidDisciplineException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.deliverProject(disciplineName, nameProject, deliveryMessage, id);
+  }
+
+  public void fillSurvey(String disciplineName, String projectName, int hours, String comment) throws BadEntryException, ImportFileException {
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.fillSurvey(disciplineName, projectName, hours, comment);      
+  }
+
+  public String showSurvey(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    return _student.showSurvey(disciplineName, projectName);
+  }
+
+ /*===================================================PORTAL DO DELEGADO===============================*/
+
+ public void createSurvey(String disciplineName, String projectName) throws BadEntryException, InvalidDisciplineException, InvalidProjectException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.createSurvey(disciplineName, projectName);
+  }
+
+  public void cancelSurvey(String disciplineName, String projectName) throws BadEntryException, ImportFileException, SurveyFinishException, InvalidDisciplineException, InvalidProjectException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.cancelSurvey(disciplineName, projectName);
+  }
+
+  public void openSurvey(String disciplineName, String projectName) throws BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.openSurvey(disciplineName, projectName);
+  }
+
+  public void closeSurvey(String disciplineName, String projectName) throws BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.closeSurvey(disciplineName, projectName);
+  }
+
+  public void finalizeSurvey(String disciplineName, String projectName) throws BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    _student.finalizeSurvey(disciplineName, projectName);
+  }
+
+  public String showSurveys(String disciplineName) throws InvalidDisciplineException{
+    int id = _person.getId();
+    Student _student = getStudents().get(id);
+    return _student.showSurveys(disciplineName);
   }
 }

@@ -36,13 +36,4 @@ public class Discipline implements Serializable{
    public TreeMap<String,Project> getProjects(){
     return _projects;
    }
-
-   /*public int compareTo(Discipline discipline){
-    int value = _course.compareTo(discipline.getCourse());
-    if(value != 0){
-        return value;
-    }else{
-        return _name.compareTo(discipline.getName());
-    } 
-   }*/
 }

@@ -18,7 +18,12 @@ import java.io.FileNotFoundException;
 import sth.exceptions.BadEntryException;
 import sth.exceptions.ImportFileException;
 import sth.exceptions.InvalidDisciplineException;
+import sth.exceptions.InvalidProjectException;
 import sth.exceptions.NoSuchPersonIdException;
+import sth.exceptions.OpenSurveyException;
+import sth.exceptions.CloseSurveyException;
+import sth.exceptions.FinishSurveyException;
+import sth.exceptions.SurveyFinishException;
 
 //FIXME import other classes if needed
 
@@ -39,8 +44,8 @@ public class SchoolManager {
   public void save(String filename) throws IOException, ImportFileException {
     if(_filechanged){
       if(_filename == ""){
-        if(filename == null){ /*interessa?*/
-            throw new ImportFileException();
+        if(filename == null){ 
+          throw new ImportFileException();
         }
         _filename = filename;
       }
@@ -57,11 +62,13 @@ public class SchoolManager {
     ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(_filename)));
     School school2 = (School) ois.readObject();
     ois.close();   
-    if(school2.getPersons().get(_person.getId()) != null){
+    /*if(school2.getPersons().get(_person.getId()) != null){
         _school = school2;
     }else{
        throw new NoSuchPersonIdException(_person.getId());
-    }
+    }*/
+    school2.login(_person.getId());
+    _school = school2;
   }
 
   
@@ -82,10 +89,10 @@ public class SchoolManager {
    * @param id
    * @throws NoSuchPersonIdException
    */
- public void login(int id) throws NoSuchPersonIdException {
+  public void login(int id) throws NoSuchPersonIdException {
        _person = _school.getPersons().get(id);
        _school.login(id);
-    }
+  }
 
   /**
    * @return true when the currently logged in person is an administrative
@@ -140,13 +147,15 @@ public class SchoolManager {
 
   //FIXME implement other methods (in general, one for each command in sth-app)
 
-    public String showPerson(){
-        return _school.showPerson();
-    }
+/*===================================================PORTAL DA PESSOA===============================*/
 
-    public String studentsDiscipline(String discipline) throws BadEntryException{
-        return _school.studentsDiscipline(discipline);
-    }
+  public String showPerson(){
+       return _school.showPerson();
+  }
+
+  public String studentsDiscipline(String discipline) throws BadEntryException{
+      return _school.studentsDiscipline(discipline);
+  }
 
   public void changePhoneNumber(String newPhoneNumber){ 
      _filechanged = true;
@@ -161,15 +170,63 @@ public class SchoolManager {
     return _school.searchPerson(name);
   }
 
+/*===================================================PORTAL DO DOCENTE===============================*/
 
   public void createProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
     _school.createProject(nameProject, nameDiscipline);
   }
 
 
-  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
+  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException, OpenSurveyException{
     _school.closeProject(nameProject, nameDiscipline);
   }
- 
-} 
- 
+
+  public String surveyResults(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
+    return _school.surveyResults(disciplineName, projectName);
+  }
+
+  public String projectSubmissions(String disciplineName, String nameProject) throws BadEntryException, InvalidDisciplineException{
+    return _school.projectSubmissions(disciplineName, nameProject);
+  }
+
+ /*===================================================PORTAL DO ESTUDANTE===============================*/
+
+  public void deliverProject(String disciplineName, String nameProject, String DeliveryMessage) throws BadEntryException, InvalidDisciplineException{
+    _school.deliverProject(disciplineName, nameProject, DeliveryMessage);
+  } 
+
+  public void fillSurvey(String disciplineName, String projectName, int hours, String comment) throws BadEntryException, ImportFileException {
+    _school.fillSurvey(disciplineName, projectName, hours, comment);
+  }
+
+  public String showSurvey(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
+    return _school.showSurvey(disciplineName, projectName);
+  }
+
+ /*===================================================PORTAL DO DELEGADO===============================*/
+
+ public void createSurvey(String disciplineName, String projectName) throws BadEntryException, InvalidDisciplineException, InvalidProjectException{
+   _school.createSurvey(disciplineName, projectName);
+ }
+
+ public void cancelSurvey(String disciplineName, String projectName) throws BadEntryException, ImportFileException, SurveyFinishException, InvalidDisciplineException, InvalidProjectException{
+  _school.cancelSurvey(disciplineName, projectName);
+ }
+
+ public void openSurvey(String disciplineName, String projectName) throws BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
+  _school.openSurvey(disciplineName, projectName);
+ }
+
+ public void closeSurvey(String disciplineName, String projectName) throws BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
+  _school.closeSurvey(disciplineName, projectName);
+ }
+
+ public void finalizeSurvey(String disciplineName, String projectName) throws BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
+  _school.finalizeSurvey(disciplineName, projectName);
+ }
+
+ public String showSurveys(String disciplineName) throws InvalidDisciplineException{
+  return _school.showSurveys(disciplineName);
+ }
+
+}
