@@ -29,19 +29,18 @@ public class DoSave extends Command<SchoolManager> {
   /** @see pt.tecnico.po.ui.Command#execute() */
   @Override
   public final void execute() {
-	_form.parse();
     try{
       _receiver.save(null);
     }catch(ImportFileException e){
-	
-	try{
-	  _receiver.save(_filename.value());
-	}catch(IOException | ImportFileException b){
-	  b.printStackTrace();
-	}
-     } catch(IOException c){
-	c.printStackTrace();
-     }
+      _form.parse();
+	    try{
+	      _receiver.save(_filename.value());
+	    }catch(IOException | ImportFileException b){
+	      b.printStackTrace();
+	    }
+    } catch(IOException c){
+	    c.printStackTrace();
+    }
     //FIXME implement command
   }
 

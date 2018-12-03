@@ -1,5 +1,6 @@
 package sth.app.main;
 
+import sth.app.exceptions.NoSuchPersonException;
 import sth.exceptions.NoSuchPersonIdException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,14 +29,16 @@ public class DoOpen extends Command<SchoolManager> {
 
   /** @see pt.tecnico.po.ui.Command#execute() */
   @Override
-  public final void execute() {
+  public final void execute() throws NoSuchPersonException {
     _form.parse();
     try {
     	_receiver.load(_filename.value());
     } catch (FileNotFoundException f) {
       	_display.popup(Message.fileNotFound());
-    } catch (NoSuchPersonIdException | ClassNotFoundException | IOException e) {
+    } catch (ClassNotFoundException | IOException e) {
       	e.printStackTrace();
+    } catch (NoSuchPersonIdException p) {
+        throw new NoSuchPersonException(p.getId());
     }
   }
 
