@@ -2,6 +2,8 @@ package sth.app.teaching;
 
 import sth.app.exceptions.NoSuchDisciplineException;
 import sth.app.exceptions.NoSuchProjectException;
+import sth.app.exceptions.OpeningSurveyException;
+import sth.exceptions.OpenSurveyException;
 import sth.exceptions.BadEntryException;
 import sth.exceptions.InvalidDisciplineException;
 import pt.tecnico.po.ui.Command;
@@ -40,6 +42,8 @@ public class DoCloseProject extends Command<SchoolManager> {
         throw new NoSuchProjectException(_nameDiscipline.value(), _nameProject.value());
     } catch(InvalidDisciplineException p){
         throw new NoSuchDisciplineException(_nameDiscipline.value());
+    } catch(OpenSurveyException o){
+      throw new OpeningSurveyException(_nameDiscipline.value(), _nameProject.value());
     }
   } 
 
