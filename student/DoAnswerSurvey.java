@@ -1,24 +1,20 @@
 package sth.app.student;
 
-import java.security.NoSuchProviderException;
-
 import pt.tecnico.po.ui.Command;
 import pt.tecnico.po.ui.DialogException;
 import pt.tecnico.po.ui.Input;
 import sth.SchoolManager;
-import sth.exceptions.BadEntryException;
-import sth.exceptions.ImportFileException;
+import sth.exceptions.NoSuchSurveyException;
+import sth.exceptions.NoSubmissionException;
 import sth.app.exceptions.NoSuchProjectException;
 import sth.app.exceptions.NoSurveyException;
 
-//FIXME import other classes if needed
 
 /**
  * 4.4.2. Answer survey.
  */
 public class DoAnswerSurvey extends Command<SchoolManager> {
 
-  //FIXME add input fields if needed
   Input<String> _nameDiscipline;
   Input<String> _nameProject;
   Input<Integer> _hours;
@@ -33,7 +29,6 @@ public class DoAnswerSurvey extends Command<SchoolManager> {
     _nameProject = _form.addStringInput(Message.requestProjectName());
     _hours = _form.addIntegerInput(Message.requestProjectHours());
     _comment = _form.addStringInput(Message.requestComment());
-    //FIXME initialize input fields if needed
   }
 
   /** @see pt.tecnico.po.ui.Command#execute() */
@@ -42,12 +37,11 @@ public class DoAnswerSurvey extends Command<SchoolManager> {
     _form.parse();
     try{
       _receiver.fillSurvey(_nameDiscipline.value(), _nameProject.value(), _hours.value(), _comment.value());
-    } catch(BadEntryException e){
+    } catch(NoSubmissionException nosub){
       throw new NoSuchProjectException(_nameDiscipline.value(), _nameProject.value());
-    } catch(ImportFileException p){
+    } catch(NoSuchSurveyException sosurv){
       throw new NoSurveyException(_nameDiscipline.value(), _nameProject.value());
     }
-    //FIXME implement command
   }
 
 }

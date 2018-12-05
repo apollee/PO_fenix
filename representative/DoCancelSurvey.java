@@ -5,7 +5,7 @@ import pt.tecnico.po.ui.DialogException;
 import pt.tecnico.po.ui.Input;
 import sth.SchoolManager;
 import sth.exceptions.BadEntryException;
-import sth.exceptions.ImportFileException;
+import sth.exceptions.NonEmptyException;;
 import sth.exceptions.InvalidDisciplineException;
 import sth.exceptions.InvalidProjectException;
 import sth.exceptions.SurveyFinishException;
@@ -15,15 +15,12 @@ import sth.app.exceptions.NoSuchDisciplineException;
 import sth.app.exceptions.NoSuchProjectException;
 import sth.app.exceptions.SurveyFinishedException;
 
-//FIXME import other classes if needed
-
 /**
  * 4.5.2. Cancel survey.
  */
 public class DoCancelSurvey extends Command<SchoolManager> {
   Input<String> _nameDiscipline;
   Input<String> _nameProject;
-  //FIXME add input fields if needed
 
   /**
    * @param receiver
@@ -32,7 +29,6 @@ public class DoCancelSurvey extends Command<SchoolManager> {
     super(Label.CANCEL_SURVEY, receiver);
     _nameDiscipline = _form.addStringInput(Message.requestDisciplineName());
     _nameProject = _form.addStringInput(Message.requestProjectName());
-    //FIXME initialize input fields if needed
   }
 
   /** @see pt.tecnico.po.ui.Command#execute() */
@@ -41,18 +37,17 @@ public class DoCancelSurvey extends Command<SchoolManager> {
     _form.parse();
     try{
       _receiver.cancelSurvey(_nameDiscipline.value(), _nameProject.value());
-    } catch(InvalidDisciplineException i){
+    } catch(InvalidDisciplineException invaldis){
       throw new NoSuchDisciplineException(_nameDiscipline.value());
-    } catch(InvalidProjectException ip){
+    } catch(InvalidProjectException invalproj){
       throw new NoSuchProjectException(_nameDiscipline.value(), _nameProject.value());
-    }catch(BadEntryException e){
+    }catch(BadEntryException nosurv){
       throw new NoSurveyException(_nameDiscipline.value(), _nameProject.value());
-    }catch(ImportFileException p){
-      throw new NonEmptySurveyException(_nameDiscipline.value(), _nameProject.value());
-    } catch(SurveyFinishException c){
+    } catch(SurveyFinishException finished){
       throw new SurveyFinishedException(_nameDiscipline.value(), _nameProject.value());
+    }catch(NonEmptyException nonemp){
+      throw new NonEmptySurveyException(_nameDiscipline.value(), _nameProject.value());
     }
-    //FIXME implement command
   }
 
 }

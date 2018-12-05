@@ -10,14 +10,12 @@ import sth.exceptions.InvalidProjectException;
 import sth.app.exceptions.NoSurveyException;
 import sth.app.exceptions.NoSuchDisciplineException;
 import sth.app.exceptions.NoSuchProjectException;
-//FIXME import other classes if needed
 
 /**
  * 4.4.3. Show survey results.
  */
 public class DoShowSurveyResults extends Command<SchoolManager> {
 
-  //FIXME add input fields if needed
   Input<String> _nameDiscipline;
   Input<String> _nameProject;
 
@@ -26,7 +24,6 @@ public class DoShowSurveyResults extends Command<SchoolManager> {
    */
   public DoShowSurveyResults(SchoolManager receiver) {
     super(Label.SHOW_SURVEY_RESULTS, receiver);
-    //FIXME initialize input fields if needed
     _nameDiscipline = _form.addStringInput(Message.requestDisciplineName());
     _nameProject = _form.addStringInput(Message.requestProjectName());
   }
@@ -34,10 +31,9 @@ public class DoShowSurveyResults extends Command<SchoolManager> {
   /** @see pt.tecnico.po.ui.Command#execute() */
   @Override
   public final void execute() throws DialogException {
-    //FIXME implement command
     _form.parse();
     try{
-      _receiver.showSurvey(_nameDiscipline.value(), _nameProject.value());
+      _display.popup(_receiver.showSurvey(_nameDiscipline.value(), _nameProject.value()));
     } catch(InvalidDisciplineException i){
       throw new NoSuchDisciplineException(_nameDiscipline.value());
     } catch(InvalidProjectException ip){
