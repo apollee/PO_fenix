@@ -27,7 +27,7 @@ public class ClosedState extends SurveyState implements Serializable{
 
     @Override
     public void finalizeSurvey() throws FinishSurveyException{
-        throw new FinishSurveyException();
+        getSurvey().setState(new FinalizedState(getSurvey()));
     }
 
     @Override

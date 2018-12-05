@@ -25,15 +25,15 @@ import sth.exceptions.OpenSurveyException;
 import sth.exceptions.CloseSurveyException;
 import sth.exceptions.FinishSurveyException;
 import sth.exceptions.SurveyFinishException;
-
+import sth.exceptions.NoSuchSurveyException;
+import sth.exceptions.NoSubmissionException;
+import sth.exceptions.NonEmptyException;
 
 /**
  * School implementation.
  */
 
 public class School implements Serializable {
-
-  //FIXME define object fields (attributes and, possibly, associations)
 
   /** Serial number for serialization. */
   private static final long serialVersionUID = 201810051538L;
@@ -67,7 +67,6 @@ public class School implements Serializable {
    * @throws ImportFileException
    */
   public void importFile(String filename) throws IOException, BadEntryException, ImportFileException{
-    //FIXME implement text file reader
     try{
         BufferedReader reader = new BufferedReader(new FileReader(filename));
         String line;
@@ -112,6 +111,7 @@ public class School implements Serializable {
                             _disciplines.put(discipline, _discipline);
                             _course.getDisciplines().put(discipline, _discipline);
                         }
+                        _discipline.registerObserver(_professor, id);
                         _disciplineCourse.get(course).put(discipline, _discipline);
 
                         if(_professor.getDisciplines() != null){
@@ -192,6 +192,7 @@ public class School implements Serializable {
                         _disciplines.put(discipline, _discipline);
                         _course.getDisciplines().put(discipline, _discipline);
                     }
+                    _discipline.registerObserver(_student, id);
                     if(_student.getDisciplines().size() == 6){
                         throw new BadEntryException(discipline);
                     }else{
@@ -212,6 +213,16 @@ public class School implements Serializable {
                 throw new BadEntryException(fields[0]);
             }
         }
+        for(Course course: _courses.values()){
+            HashMap<Integer,Student> representatives = course.getRepresentatives();
+            HashMap<String, Discipline> disciplines = course.getDisciplines();
+            for(Discipline discipline: disciplines.values()){
+                for(Student representative: representatives.values()){
+                    discipline.registerObserver(representative, representative.getId());
+                }
+            }
+        
+        }  
         reader.close();
     }catch(BadEntryException e){
         throw new ImportFileException(e);
@@ -235,8 +246,6 @@ public class School implements Serializable {
     _administratives.put(id, _administrative);
     _persons.put(id, (Person) _administrative);
   }
-
-  //FIXME implement other methods
 
   /**
   * Returns the persons in the school database
@@ -275,14 +284,15 @@ public class School implements Serializable {
  * @param id id of the student who is trying to log in
  * @throws NoSuchPersonIdException
  */
-  public void login(int id) throws NoSuchPersonIdException{
+  public Person login(int id) throws NoSuchPersonIdException{
     _person = getPersons().get(id);
     if(_person == null){
         throw new NoSuchPersonIdException(id);
     }
+    return _person;
   }
 
-  /*===================================================PORTAL DA PESSOA===============================*/
+  /*=============================PORTAL DA PESSOA===============================*/
 
   /**
   * Prints the information of the person who logged in
@@ -290,19 +300,6 @@ public class School implements Serializable {
   */
   public String showPerson(){
     return _person.toString();
-  }
-
-  /**
-  * Prints the students in a discipline
-  * @param discipline discipline of the students that will be printed
-  * @throws BadEntryException
-  * @return String
-  */
-  public String studentsDiscipline(String discipline) throws BadEntryException{
-    int id = _person.getId();
-    Professor _professor = getProfessors().get(id);
-
-    return _professor.studentsDiscipline(discipline);
   }
 
   /**
@@ -318,7 +315,8 @@ public class School implements Serializable {
   }
 
   /**
-  * Searches for a persons name and prints the information of all the persons in the database with that name
+  * Searches for a persons name and prints the information of all the persons in 
+  the database with that name
   * @param name of the person to be searched
   * @return String
   */
@@ -329,7 +327,6 @@ public class School implements Serializable {
     for(Person person: getPersons().values()){
         String _name = person.getName();
         if(_name.contains(name)){
-            /*string += person.toString();*/
             list.add(person);
         }
     }
@@ -341,16 +338,18 @@ public class School implements Serializable {
     return string;
   }
 
-  /*===================================================PORTAL DO DOCENTE===============================*/
+  /*============================PORTAL DO DOCENTE===============================*/
 
   /**
-  * Creates a project of the discipline with the name that was given by the professor
+  * Creates a project of the discipline with the name that was given by the 
+  professor
   * @param nameProject name of the project
   * @param nameDiscipline name of the discipline
-  * @throws BadEntryException
   * @throws InvalidDisciplineException
+  * @throws InvalidProjectException
   */
-  public void createProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
+  public void createProject(String nameProject, String nameDiscipline) throws 
+  InvalidDisciplineException,InvalidProjectException{
     int id = _person.getId();
     Professor _professor = getProfessors().get(id);
     _professor.createProject(nameProject, nameDiscipline);
@@ -360,94 +359,143 @@ public class School implements Serializable {
   * Closes a project of the discipline with the name that was given by the professor
   * @param nameProject name of the project
   * @param nameDiscipline name of the discipline
-  * @throws BadEntryException
   * @throws InvalidDisciplineException
+  * @throws InvalidProjectException
   */
-
-  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException, OpenSurveyException{
-    int id = _person.getId();
-    Professor _professor = getProfessors().get(id);
+  public void closeProject(String nameProject, String nameDiscipline) throws 
+  InvalidDisciplineException, InvalidProjectException, OpenSurveyException{
+    Professor _professor = getProfessor();
     _professor.closeProject(nameProject, nameDiscipline);
   }
 
-  public String surveyResults(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
-    int id = _person.getId();
-    Professor _professor = getProfessors().get(id);
-    return _professor.surveyResults(disciplineName, projectName);
+  /**
+  * Shows the results of the survey of the project of the corresponding discipline 
+  given by the professor
+  * @param nameDiscipline name of the discipline
+  * @param nameProject name of the project
+  * @throws InvalidDisciplineExcecption
+  * @throws InvalidProjectException
+  * @throws NoSuchSurveyException
+  * @return String
+  */
+  public String surveyResults(String nameDiscipline, String nameProject) throws
+  InvalidDisciplineException, InvalidProjectException, NoSuchSurveyException{
+    Professor _professor = getProfessor();
+    return _professor.surveyResults(nameDiscipline, nameProject);
   }
-
-  public String projectSubmissions(String disciplineName, String nameProject) throws BadEntryException, InvalidDisciplineException{
-    int id = _person.getId();
-    Professor _professor = getProfessors().get(id);
-    return _professor.projectSubmissions(disciplineName, nameProject);
-  }
-  
-
-  /*===================================================PORTAL DO ESTUDANTE===============================*/
 
   /**
-  * Delivers a project(with the name that was given) of the discipline(with the name that was given).
-    The delivery includes the given delivery message
+  * Shows the submissions of the given project  
+  * @param nameDiscipline name of the discipline
+  * @param nameProject name of the project
+  * @throws InvalidDisciplineExcecption
+  * @throws InvalidProjectException
+  * @return String
+  */
+
+  public String projectSubmissions(String nameDiscipline, String nameProject)
+  throws InvalidDisciplineException, InvalidProjectException{
+    Professor _professor = getProfessor();
+    return _professor.projectSubmissions(nameDiscipline, nameProject);
+  }
+
+  /**
+  * Prints the students in a discipline
+  * @param discipline discipline of the students that will be printed
+  * @throws InvalidDisciplineException
+  * @return String
+  */
+  public String studentsDiscipline(String discipline) throws InvalidDisciplineException{ 
+    int id = _person.getId();
+    Professor _professor = getProfessors().get(id);
+
+    return _professor.studentsDiscipline(discipline);
+  }
+
+  /*==========================PORTAL DO ESTUDANTE===============================*/
+
+  /**
+  * Delivers a project of the given discipline 
   * @param nameProject name of the project
   * @param nameDiscipline name of the discipline
-  * @param deliveryMessage delivery message of the submission
-  * @throws BadEntryException
   * @throws InvalidDisciplineException
+  * @throws InvalidProjectException
   */
-  public void deliverProject(String disciplineName, String nameProject, String deliveryMessage)
-  throws BadEntryException, InvalidDisciplineException{
+  public void deliverProject(String disciplineName, String nameProject, 
+  String deliveryMessage) throws InvalidDisciplineException, InvalidProjectException{
     int id = _person.getId();
     Student _student = getStudents().get(id);
     _student.deliverProject(disciplineName, nameProject, deliveryMessage, id);
   }
 
-  public void fillSurvey(String disciplineName, String projectName, int hours, String comment) throws BadEntryException, ImportFileException {
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+  /**
+  * Fills a survey of the given discipline
+  * @param nameProject name of the project
+  * @param nameDiscipline name of the discipline
+  * @throws NoSubmissionException
+  * @throws NoSuchSurveyException
+  */
+  public void fillSurvey(String disciplineName, String projectName, int hours, 
+  String comment) throws NoSubmissionException, NoSuchSurveyException {
+    Student _student = getStudent();
     _student.fillSurvey(disciplineName, projectName, hours, comment);      
   }
 
   public String showSurvey(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+    Student _student = getStudent();
     return _student.showSurvey(disciplineName, projectName);
   }
 
- /*===================================================PORTAL DO DELEGADO===============================*/
+ /*=============================PORTAL DO DELEGADO===============================*/
 
- public void createSurvey(String disciplineName, String projectName) throws BadEntryException, InvalidDisciplineException, InvalidProjectException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+ public void createSurvey(String disciplineName, String projectName) throws
+ BadEntryException, InvalidDisciplineException, InvalidProjectException{
+    Student _student = getStudent();
     _student.createSurvey(disciplineName, projectName);
   }
 
-  public void cancelSurvey(String disciplineName, String projectName) throws BadEntryException, ImportFileException, SurveyFinishException, InvalidDisciplineException, InvalidProjectException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+  public void cancelSurvey(String disciplineName, String projectName) throws
+  BadEntryException, NonEmptyException, SurveyFinishException, InvalidDisciplineException, InvalidProjectException{
+    Student _student = getStudent();
     _student.cancelSurvey(disciplineName, projectName);
   }
 
-  public void openSurvey(String disciplineName, String projectName) throws BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+  public void openSurvey(String disciplineName, String projectName) throws
+  BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
+    Student _student = getStudent();
     _student.openSurvey(disciplineName, projectName);
   }
 
-  public void closeSurvey(String disciplineName, String projectName) throws BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+  public void closeSurvey(String disciplineName, String projectName) throws
+   BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
+    Student _student = getStudent();
     _student.closeSurvey(disciplineName, projectName);
   }
 
-  public void finalizeSurvey(String disciplineName, String projectName) throws BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+  public void finalizeSurvey(String disciplineName, String projectName) throws
+   BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
+    Student _student = getStudent();
     _student.finalizeSurvey(disciplineName, projectName);
   }
 
   public String showSurveys(String disciplineName) throws InvalidDisciplineException{
-    int id = _person.getId();
-    Student _student = getStudents().get(id);
+    Student _student = getStudent();
     return _student.showSurveys(disciplineName);
   }
+
+
+  /*===================================OTHERS==================================*/
+  
+  public Professor getProfessor(){
+      int id = _person.getId();
+      return getProfessors().get(id);
+  }
+
+  public Student getStudent(){
+    int id = _person.getId();
+    return getStudents().get(id);
+  }
 }
+
+
+

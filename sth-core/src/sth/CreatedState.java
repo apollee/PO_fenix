@@ -12,10 +12,9 @@ public class CreatedState extends SurveyState implements Serializable{
     }
 
     @Override
-	public void open() throws OpenSurveyException{
-        System.out.println("yo");
-        throw new OpenSurveyException();
-	}
+	public void open(){
+        getSurvey().setState(new OpenState(getSurvey()));
+    }
 
     @Override    
 	public void close() throws CloseSurveyException{
@@ -24,7 +23,7 @@ public class CreatedState extends SurveyState implements Serializable{
 
     @Override    
     public void cancel(){
-        /*remove the survey*/
+        
     }
 
     @Override    

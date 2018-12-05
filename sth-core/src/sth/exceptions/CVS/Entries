@@ -3,4 +3,12 @@
 /NoSuchPersonIdException.java/1.1/Sun Oct  7 10:12:12 2018//
 /InvalidCourseSelectionException.java/1.1/Thu Nov  8 11:36:36 2018//
 /InvalidDisciplineException.java/1.1/Thu Nov 15 21:27:35 2018//
+/CloseSurveyException.java/1.1/Sun Dec  2 18:58:35 2018//
+/FinishSurveyException.java/1.1/Sun Dec  2 19:07:15 2018//
+/NoSubmissionException.java/1.1/Wed Dec  5 00:23:42 2018//
+/NoSuchSurveyException.java/1.1/Tue Dec  4 23:18:10 2018//
+/NonEmptyException.java/1.1/Wed Dec  5 00:34:05 2018//
+/OpenSurveyException.java/1.1/Sun Dec  2 17:51:24 2018//
+/SurveyFinishException.java/1.1/Sun Dec  2 23:21:19 2018//
+/InvalidProjectException.java/1.1/Sun Dec  2 22:30:09 2018//
 D

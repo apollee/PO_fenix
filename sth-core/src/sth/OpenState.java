@@ -23,13 +23,12 @@ public class OpenState extends SurveyState implements Serializable{
 	
 	@Override
     public void cancel(){
-		/*removes survey
-		*/
+		
     }
 
 	@Override
     public void finalizeSurvey() throws FinishSurveyException{
-		throw new FinishSurveyException();
+			throw new FinishSurveyException();
 	}
 
 	@Override

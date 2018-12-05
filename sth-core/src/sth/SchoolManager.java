@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.TreeMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collection;
 import java.io.ObjectOutputStream;
@@ -24,8 +25,9 @@ import sth.exceptions.OpenSurveyException;
 import sth.exceptions.CloseSurveyException;
 import sth.exceptions.FinishSurveyException;
 import sth.exceptions.SurveyFinishException;
-
-//FIXME import other classes if needed
+import sth.exceptions.NoSuchSurveyException;
+import sth.exceptions.NoSubmissionException;
+import sth.exceptions.NonEmptyException;
 
 /**
  * The façade class.
@@ -37,9 +39,6 @@ public class SchoolManager {
   private boolean _filechanged = true;
   private Person _person;
 
-  //FIXME add object attributes if needed
-
-  //FIXME implement constructors if needed
 
   public void save(String filename) throws IOException, ImportFileException {
     if(_filechanged){
@@ -49,26 +48,27 @@ public class SchoolManager {
         }
         _filename = filename;
       }
-      _filechanged = false;;
+      _filechanged = false;
       ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(_filename)));
       oos.writeObject(_school);
       oos.close();
     }
   }
 
-  public void load(String filename) throws FileNotFoundException, ClassNotFoundException, IOException, NoSuchPersonIdException{
+  public String load(String filename) throws FileNotFoundException, ClassNotFoundException, IOException, NoSuchPersonIdException{
     _filechanged = true;
     _filename = filename;
     ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(_filename)));
     School school2 = (School) ois.readObject();
     ois.close();   
-    /*if(school2.getPersons().get(_person.getId()) != null){
-        _school = school2;
-    }else{
-       throw new NoSuchPersonIdException(_person.getId());
-    }*/
-    school2.login(_person.getId());
+    _person = school2.login(_person.getId());
     _school = school2;
+    String string = "";
+    ArrayList<String> notifications = _person.getNotifications();
+    for(String notification: notifications){
+      string += notification;
+    }
+    return string;
   }
 
   
@@ -90,6 +90,7 @@ public class SchoolManager {
    * @throws NoSuchPersonIdException
    */
   public void login(int id) throws NoSuchPersonIdException {
+       String string = "";
        _person = _school.getPersons().get(id);
        _school.login(id);
   }
@@ -145,16 +146,11 @@ public class SchoolManager {
     return true;
   }
 
-  //FIXME implement other methods (in general, one for each command in sth-app)
 
-/*===================================================PORTAL DA PESSOA===============================*/
+/*===============================PORTAL DA PESSOA===============================*/
 
   public String showPerson(){
        return _school.showPerson();
-  }
-
-  public String studentsDiscipline(String discipline) throws BadEntryException{
-      return _school.studentsDiscipline(discipline);
   }
 
   public void changePhoneNumber(String newPhoneNumber){ 
@@ -170,32 +166,46 @@ public class SchoolManager {
     return _school.searchPerson(name);
   }
 
-/*===================================================PORTAL DO DOCENTE===============================*/
+/*==============================PORTAL DO DOCENTE===============================*/
 
-  public void createProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException{
+  public void createProject(String nameProject, String nameDiscipline) throws 
+  InvalidDisciplineException, InvalidProjectException{
+    _filechanged=true;
     _school.createProject(nameProject, nameDiscipline);
   }
 
 
-  public void closeProject(String nameProject, String nameDiscipline) throws BadEntryException, InvalidDisciplineException, OpenSurveyException{
+  public void closeProject(String nameProject, String nameDiscipline) throws 
+  InvalidDisciplineException, InvalidProjectException, OpenSurveyException{
+    _filechanged=true;
     _school.closeProject(nameProject, nameDiscipline);
   }
 
-  public String surveyResults(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
+  public String surveyResults(String disciplineName, String projectName) throws 
+  InvalidDisciplineException, InvalidProjectException, NoSuchSurveyException{
     return _school.surveyResults(disciplineName, projectName);
   }
 
-  public String projectSubmissions(String disciplineName, String nameProject) throws BadEntryException, InvalidDisciplineException{
+  public String projectSubmissions(String disciplineName, String nameProject) 
+  throws InvalidDisciplineException, InvalidProjectException{
     return _school.projectSubmissions(disciplineName, nameProject);
   }
 
- /*===================================================PORTAL DO ESTUDANTE===============================*/
+  public String studentsDiscipline(String discipline) throws InvalidDisciplineException{
+    return _school.studentsDiscipline(discipline);
+  }
 
-  public void deliverProject(String disciplineName, String nameProject, String DeliveryMessage) throws BadEntryException, InvalidDisciplineException{
+ /*============================PORTAL DO ESTUDANTE===============================*/
+
+  public void deliverProject(String disciplineName, String nameProject, 
+  String DeliveryMessage) throws InvalidDisciplineException, InvalidProjectException{
+    _filechanged=true;
     _school.deliverProject(disciplineName, nameProject, DeliveryMessage);
   } 
 
-  public void fillSurvey(String disciplineName, String projectName, int hours, String comment) throws BadEntryException, ImportFileException {
+  public void fillSurvey(String disciplineName, String projectName, int hours, 
+  String comment) throws NoSubmissionException, NoSuchSurveyException {
+    _filechanged=true;
     _school.fillSurvey(disciplineName, projectName, hours, comment);
   }
 
@@ -205,23 +215,33 @@ public class SchoolManager {
 
  /*===================================================PORTAL DO DELEGADO===============================*/
 
- public void createSurvey(String disciplineName, String projectName) throws BadEntryException, InvalidDisciplineException, InvalidProjectException{
-   _school.createSurvey(disciplineName, projectName);
+ public void createSurvey(String disciplineName, String projectName) throws 
+ BadEntryException, InvalidDisciplineException, InvalidProjectException{
+  _filechanged=true; 
+  _school.createSurvey(disciplineName, projectName);
  }
 
- public void cancelSurvey(String disciplineName, String projectName) throws BadEntryException, ImportFileException, SurveyFinishException, InvalidDisciplineException, InvalidProjectException{
+ public void cancelSurvey(String disciplineName, String projectName) throws 
+ BadEntryException, NonEmptyException, SurveyFinishException, InvalidDisciplineException, InvalidProjectException{
+  _filechanged=true;
   _school.cancelSurvey(disciplineName, projectName);
  }
 
- public void openSurvey(String disciplineName, String projectName) throws BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
+ public void openSurvey(String disciplineName, String projectName) throws 
+ BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
+  _filechanged=true;
   _school.openSurvey(disciplineName, projectName);
  }
 
- public void closeSurvey(String disciplineName, String projectName) throws BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
+ public void closeSurvey(String disciplineName, String projectName) throws 
+ BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
+  _filechanged=true;
   _school.closeSurvey(disciplineName, projectName);
  }
 
- public void finalizeSurvey(String disciplineName, String projectName) throws BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
+ public void finalizeSurvey(String disciplineName, String projectName) throws
+  BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
+  _filechanged=true;
   _school.finalizeSurvey(disciplineName, projectName);
  }
 

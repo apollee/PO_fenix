@@ -14,12 +14,14 @@ import sth.exceptions.CloseSurveyException;
 import sth.exceptions.FinishSurveyException;
 import sth.exceptions.InvalidProjectException;
 import sth.exceptions.SurveyFinishException;
+import sth.exceptions.NoSuchSurveyException;
+import sth.exceptions.NoSubmissionException;
+import sth.exceptions.NonEmptyException;
 
 public class Student extends Person implements Serializable{
     int max_disciplines = 6;
     private TreeMap<String,Discipline> _disciplines;
     private Course _course = new Course(""); 
-    private boolean _filledSurvey = false;
    
     public Student(int id, String phoneNumber, String name){
         super(id, phoneNumber, name);
@@ -39,7 +41,7 @@ public class Student extends Person implements Serializable{
     }
 
     public void deliverProject(String disciplineName, String projectName, String deliveryMessage, int id)
-    throws BadEntryException, InvalidDisciplineException{
+    throws InvalidDisciplineException, InvalidProjectException{
         Discipline discipline = _disciplines.get(disciplineName);
         if(discipline == null){
             throw new InvalidDisciplineException();
@@ -47,9 +49,9 @@ public class Student extends Person implements Serializable{
 
         Project project = discipline.getProjects().get(projectName);
         if(project == null){
-            throw new BadEntryException(projectName);
+            throw new InvalidProjectException();
         }else if(project.getOpenValue() == false){
-            throw new BadEntryException(projectName);
+            throw new InvalidProjectException();
         }
         
         ProjectSubmission submission= new ProjectSubmission(id, deliveryMessage);
@@ -57,21 +59,21 @@ public class Student extends Person implements Serializable{
     }
 
 
-    public void fillSurvey(String disciplineName, String projectName, int hours, String comment) throws BadEntryException, ImportFileException {
+    public void fillSurvey(String disciplineName, String projectName, int hours,
+    String comment) throws NoSubmissionException, NoSuchSurveyException{
         int id = super.getId();
         Discipline discipline = _disciplines.get(disciplineName);
         Project project = discipline.getProjects().get(projectName);
         ProjectSubmission submission = project.getProjectSubmissions().get(id);
         if(submission == null){
-            throw new BadEntryException(projectName);
+            throw new NoSubmissionException();
         }
         Survey survey = project.getSurvey();
         if(survey == null || survey.status() != "Open"){
-            throw new ImportFileException();
+            throw new NoSuchSurveyException();
         }
         SurveyAnswer answer = new SurveyAnswer(hours, comment);
         survey.getAnswers().add(answer);
-        _filledSurvey = true;
     }
 
     public String showSurvey(String disciplineName, String projectName) throws InvalidDisciplineException, InvalidProjectException, BadEntryException{
@@ -84,13 +86,16 @@ public class Student extends Person implements Serializable{
         if(project == null){
             throw new InvalidProjectException();
         }
+        
+        if(project.getProjectSubmissions().get(super.getId()) == null){
+            throw new InvalidProjectException();
+        }
+        
         Survey survey = project.getSurvey();
         if(survey == null){
             throw new BadEntryException(projectName);
         }
-        if(_filledSurvey == false){
-            throw new InvalidProjectException();
-        }
+       
         String status = survey.status();
         if(status == "Created"){
             string += discipline.getName() + " - " + project.getName() + " (por abrir)\n";
@@ -117,24 +122,26 @@ public class Student extends Person implements Serializable{
     }
 
 
-    public void createSurvey(String disciplineName, String projectName) throws BadEntryException, InvalidDisciplineException, InvalidProjectException{
+    public void createSurvey(String disciplineName, String projectName) throws
+    BadEntryException, InvalidDisciplineException, InvalidProjectException{
         Discipline discipline = _course.getDisciplines().get(disciplineName);
         if(discipline == null){
             throw new InvalidDisciplineException();
         }
         Project project = discipline.getProjects().get(projectName);
-        if(project == null){
+        if(project == null || project.getOpenValue() == false){
             throw new InvalidProjectException();
         }
         Survey survey = project.getSurvey();
         if(survey != null){
             throw new BadEntryException(projectName);
         }
-        survey = new Survey(); /*ja esta com o estado inicial?*/
+        survey = new Survey();
         project.setSurvey(survey);
     } 
 
-    public void cancelSurvey(String disciplineName, String projectName) throws BadEntryException, SurveyFinishException, ImportFileException, InvalidDisciplineException, InvalidProjectException{
+    public void cancelSurvey(String disciplineName, String projectName) throws
+    BadEntryException, SurveyFinishException, NonEmptyException, InvalidDisciplineException, InvalidProjectException{
         Discipline discipline = _course.getDisciplines().get(disciplineName);
         if(discipline == null){
             throw new InvalidDisciplineException();
@@ -147,16 +154,23 @@ public class Student extends Person implements Serializable{
         if(survey == null){
             throw new BadEntryException(projectName);
         }
-        if(survey.getAnswers().size() >= 1){
-            throw new ImportFileException();
-        }
         if(survey.status() == "Open" || survey.status() == "Created"){
+            if(survey.getAnswers().size() >= 1){
+                throw new NonEmptyException();
+            }
             project.removeSurvey();
+            return;
         }
         survey.cancel();
+        if(survey.status() != "Open"){
+            if(survey.getAnswers().size() >= 1){
+                throw new NonEmptyException();
+            }
+        }
     }
     
-    public void openSurvey(String disciplineName, String projectName) throws BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
+    public void openSurvey(String disciplineName, String projectName) throws 
+    BadEntryException, OpenSurveyException, InvalidDisciplineException, InvalidProjectException{
         Discipline discipline = _course.getDisciplines().get(disciplineName);
         if(discipline == null){
             throw new InvalidDisciplineException();
@@ -172,7 +186,8 @@ public class Student extends Person implements Serializable{
         survey.open();
     }
 
-    public void closeSurvey(String disciplineName, String projectName) throws BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
+    public void closeSurvey(String disciplineName, String projectName) throws
+    BadEntryException, CloseSurveyException, InvalidDisciplineException, InvalidProjectException{
         Discipline discipline = _course.getDisciplines().get(disciplineName);
         if(discipline == null){
             throw new InvalidDisciplineException();
@@ -188,7 +203,8 @@ public class Student extends Person implements Serializable{
         survey.close();
     }
 
-    public void finalizeSurvey(String disciplineName, String projectName) throws BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
+    public void finalizeSurvey(String disciplineName, String projectName)
+    throws BadEntryException, FinishSurveyException, InvalidDisciplineException, InvalidProjectException{
         Discipline discipline = _course.getDisciplines().get(disciplineName);
         if(discipline == null){
             throw new InvalidDisciplineException();
@@ -202,9 +218,12 @@ public class Student extends Person implements Serializable{
             throw new BadEntryException(projectName);
         }
         survey.finalizeSurvey();
+        String message = "Resultados do inquérito do projecto " + projectName + " da discipline " + disciplineName + "\n";
+        discipline.notifyObservers(message);
     }
 
-    public String showSurveys(String disciplineName) throws InvalidDisciplineException{
+    public String showSurveys(String disciplineName) throws 
+    InvalidDisciplineException{
         String string = "";
         Discipline discipline = _course.getDisciplines().get(disciplineName);
         if(discipline == null){
